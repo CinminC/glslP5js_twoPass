@@ -3,8 +3,6 @@ let cam;
 let pastFrame;
 let pass1;
 
-//CLICK while looking at the cursor to launch sketch and begin training! 
-
 var rawPosX;
 var rawPosY;
 var smoothedPosX_v1 = 0;
@@ -12,11 +10,15 @@ var smoothedPosX_v2 = 0;
 var smoothedPosY_v1 = 0;
 var smoothedPosY_v2 = 0;
 
+let isPreviewOn = true;
+let isPreviewOnToggle = true;
+
 function preload() {
   // load the shaders, we will use the same vertex shader and frag shaders for both passes
   shaderOne = loadShader('base.vert', 'frag1.frag');
 
   //load webgazer
+  //CLICK while looking at the cursor to launch sketch and begin training! 
   webgazer.showPredictionPoints(false).setGazeListener(function (data, elapsedTime) {
     if (data == null) {
       return;
@@ -28,8 +30,9 @@ function preload() {
 
     smoothedPosX_v2 = lerp(smoothedPosX_v1, smoothedPosX_v2, 0.9)
     smoothedPosY_v2 = lerp(smoothedPosY_v1, smoothedPosY_v2, 0.9)
-    console.log(elapsedTime); //elapsed time is based on time since begin was called
+    // console.log(elapsedTime); //elapsed time is based on time since begin was called
   }).begin();
+  webgazer.applyKalmanFilter(true);
 }
 
 function setup() {
@@ -53,10 +56,10 @@ function setup() {
 
   // turn off the cg layers stroke
   pass1.noStroke();
+  fill(255, 100)
 }
 
 function draw() {
-
   // set the shader for our first pass
   pass1.shader(shaderOne);
   shaderOne.setUniform('u_tex0', cam);
@@ -73,10 +76,30 @@ function draw() {
   // draw the cam into the createGraphics layer at the very end of the draw loop
   // because this happens at the end, if we use it earlier in the loop it will still be referencing an older frame
   pastFrame.image(cam, 0, 0, windowWidth, windowHeight);
-  fill(255, 100)
-  ellipse(smoothedPosX_v2, smoothedPosY_v2, 20, 20);
+
+  if (isPreviewOn) {
+    webgazer.showVideoPreview(true)
+    ellipse(smoothedPosX_v2, smoothedPosY_v2, 20, 20);
+  } else if (!isPreviewOn) {
+    webgazer.showVideoPreview(false)
+  }
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+}
+
+function keyPressed() {
+  if (key == ' ') {
+    if (isPreviewOnToggle) {
+      isPreviewOn = false;
+      isPreviewOnToggle = !isPreviewOnToggle;
+    }
+    else if (!isPreviewOnToggle) {
+      isPreviewOn = true;
+      isPreviewOnToggle = !isPreviewOnToggle;
+    }
+  }
+  // print(isPreviewOn)
+
 }
